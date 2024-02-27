@@ -2,36 +2,46 @@
 #define SWSLOG_IMPLEMENTATION
 #include "swslog.h"
 //Init vars
-const uintptr_t ptrEnhancement = 0xA57534 - 0x400000; // Is OpenGL or SDL
-const uintptr_t ptrSDLWindow = 0x4BF60FC - 0x400000;
-const uintptr_t ptrSDLRenderer = 0xA576D8 - 0x400000;
-const uintptr_t ptrGLContext = 0xA576DC - 0x400000;
+//Init vars
+const uintptr_t ptrEnhancement = 0xA596D0 - 0x400000; // Is OpenGL or SDL
+const uintptr_t ptrSDLWindow = 0x4BF8298 - 0x400000;
+const uintptr_t ptrSDLRenderer = 0xA59878 - 0x400000;
+const uintptr_t ptrGLContext = 0xA59874 - 0x400000;
 
-const uintptr_t ptrWindowWidth = 0x4EF7AE8 - 0x400000;
-const uintptr_t ptrWindowHeight = 0x4EF7AEC - 0x400000;
+const uintptr_t ptrWindowWidth = 0x4EF9C84 - 0x400000;
+const uintptr_t ptrWindowHeight = 0x4EF9C88 - 0x400000;
 
 // Helpers
 const uintptr_t ptrInputingText = 0x54FDA73 - 0x400000;
 
 // Career 
-const uintptr_t ptrGameType = 0x54FC068 - 0x400000;
+// 54FE068
+const uintptr_t ptrGameType = 0x20068;  // + DSeg
 //54FC068
 //old : 0x547B078 diff: 80FF0
-const uintptr_t ptrCareerFileBuffer = 0x54645B6 - 0x400000 + 0x80FF0;
-const uintptr_t ptrNewBalance = 0x5471B92 - 0x400000 + 0x80FF0;
-const uintptr_t ptrCareerTeam = 0x5472136 - 0x400000 + 0x80FF0;
+const uintptr_t ptrCareerFileBuffer = 0x000095a6; // + DSEG
+// 
+const uintptr_t ptrNewBalance = ptrCareerFileBuffer + 0xd5dc;
+const uintptr_t ptrCareerTeam = ptrCareerFileBuffer + 0xdb80;
+const uintptr_t ptrCarTmPlayerCount = ptrCareerFileBuffer + 0xe08c;
+const uintptr_t ptrCareerTransfers = ptrCareerFileBuffer + 0x125a8;
+const uintptr_t ptrCareerPlayPool = ptrCareerFileBuffer + 0xD876;
+const uintptr_t ptrCareerManager = ptrCareerFileBuffer + 0xD74A;
+const uintptr_t ptrJobOffers = ptrCareerFileBuffer + 0xd908;
+
+const uintptr_t ptrCompetitionTables = 0x8B36; // + Dseg;
 
 AnxSWOS::AnxSWOS(uintptr_t base, bool overlay)
 : m_Base(base), m_Window(nullptr), m_Renderer(nullptr), m_ImGuiCtx(nullptr), m_GUIOverlay(overlay)
 {
-  log_init(LOG_LEV_INFO, "plugins/swos_oo_gui.log");
+  log_init(LOG_LEV_INFO, "plugins/swos_car_rte.log");
   log_info("[ANXSWOS] => Plugin loaded.");
   log_info("[ANXSWOS] => SWOS Base address: 0x%p", m_Base);
-  log_info("[ANXSWOS] => Plugin mode: %s", (m_GUIOverlay) ? "Overlay" : "Override");
   m_CurrentHexAddress = m_Base;
   m_DataSize = 0xffff;
   m_HexMemory = false;
   m_GUIEnabled = false;
+  m_DSeg = SWOSHook::GetDSegDataPtr();
 }
 
 AnxSWOS::~AnxSWOS()
@@ -75,7 +85,7 @@ SDL_Texture* AnxSWOS::loadSDLTexture(const char* path)
 bool AnxSWOS::IsCareer()
 {
   int16_t gameType = 0;
-  SWOSHook::ReadMemory(ptrGameType + m_Base, &gameType, 2);
+  SWOSHook::ReadMemory(ptrGameType + m_DSeg, &gameType, 2);
   return (gameType == 4);
 }
 
@@ -125,11 +135,6 @@ void AnxSWOS::Init()
     ImGui_ImplSDLRenderer2_Init(m_Renderer);
   }
 
-  if (!m_GUIOverlay)
-    if (m_OpenGLRenderer)
-      m_Background = new Texture("swtitle-bg.bmp");
-    else
-      m_BackgroundSDL = loadSDLTexture("swtitle-bg.bmp");
 }
 
 void AnxSWOS::OnEvent(SDL_Event* e)
@@ -176,12 +181,50 @@ void AnxSWOS::Draw()
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(width * 0.2f, heigth * 0.2f), ImGuiCond_FirstUseEver);
     //const std::string imwinname = (m_GUIOverlay) ? "GUI Plugin [OvelayMode]" : "GUI Plugin [Override Mode]";
-    ImGui::Begin("Anx-SWOS-CarRTE 0.1.1b");
+    ImGui::Begin("Anx-SWOS-CarRTE 0.1.2b");
     if (IsCareer())
     {
-      SWOSHook::ReadMemory(m_Base + ptrCareerTeam, &m_MainTeam, sizeof(ASWSTeamCar));
-      
+      ImGui::Text("base_ptr: 0x%08x", m_Base);
+      ImGui::Text("manager_ptr: 0x%08x", m_DSeg+ptrCareerManager);
+      ImGui::Text("team_ptr: 0x%08x", m_DSeg+ptrCareerTeam);
+      ImGui::Text("career_ptr: 0x%08x", m_DSeg+ptrCareerFileBuffer);
 
+      //SWOSHook::ReadMemory(m_Base + ptrCareerManager, &m_Manager, sizeof(ASWSCarManager));
+      SWOSHook::ReadMemory(m_DSeg + ptrCareerTeam, &m_MainTeam, sizeof(ASWSTeamCar));
+      SWOSHook::ReadMemory(ptrCareerManager + m_DSeg, &m_Manager, sizeof(ASWSCarManager));
+      SWOSHook::ReadMemory(ptrCarTmPlayerCount + m_DSeg, &m_PlayersCount, 1);
+      SWOSHook::ReadMemory(ptrJobOffers + m_DSeg, &m_JobOffers, sizeof(ASWSJobOffers));
+
+      ImGui::Text("No of players: %d", m_PlayersCount);
+
+      std::string mgrname = "Manager";
+      //if (!std::string(m_Manager.firstname).empty())
+      //  mgrname += std::string(m_Manager.firstname)+" ";
+      //mgrname += std::string(m_Manager.surname);
+
+      if (ImGui::CollapsingHeader(mgrname.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+      {
+        ImGui::InputText("First Name", m_Manager.firstname, 9, ImGuiInputTextFlags_CharsUppercase);
+        ImGui::InputText("Second Name", m_Manager.surname, 13, ImGuiInputTextFlags_CharsUppercase);
+        const char* nationality_str[] = {
+          "ALB", "AUT", "BEL", "BUL", "CRO", "CYP", "TCH", "DEN", "ENG", "EST", "FAR", "FIN",
+          "FRA", "GER", "GRE", "HUN", "ICE", "ISR", "ITA", "LAT", "LIT", "LUX", "MLT", "HOL",
+          "NIR", "NOR", "POL", "POR", "ROM", "RUS", "SMA", "SCO", "SLO", "SWE", "TUR", "UKR",
+          "WAL", "SRB", "BLS", "SVK", "ESP", "ARM", "BOS", "AZB", "GEO", "SUI", "IRL", "MAC",
+          "TKM", "LIE", "MOL", "CRC", "SAL", "GUA", "HON", "BHM", "MEX", "PAN", "USA", "BAH",
+          "NIC", "BER", "JAM", "TRI", "CAN", "BAR", "ELS", "SVC", "ARG", "BOL", "BRA", "CHL",
+          "COL", "ECU", "PAR", "SUR", "URU", "VEN", "GUY", "PER", "ALG", "SAF", "BOT", "BFS",
+          "BUR", "LES", "ZAI", "ZAM", "GHA", "SEN", "CIV", "TUN", "MLI", "MDG", "CMR", "CHD",
+          "UGA", "LIB", "MOZ", "KEN", "SUD", "SWA", "ANG", "TOG", "ZIM", "EGY", "TAN", "NIG",
+          "ETH", "GAB", "SIE", "BEN", "CON", "GUI", "SRL", "MAR", "GAM", "MLW", "JAP", "TAI",
+          "IND", "BAN", "BRU", "IRA", "JOR", "SRI", "SYR", "KOR", "IRN", "VIE", "MLY", "SAU",
+          "YEM", "KUW", "LAO", "NKR", "OMA", "PAK", "PHI", "CHN", "SGP", "MAU", "MYA", "PAP",
+          "TAD", "UZB", "QAT", "UAE", "AUS", "NZL", "FIJ", "SOL", "CUS"
+        };
+        int nation = m_Manager.nationality;
+        ImGui::Combo("Nationality", &nation, nationality_str, 153);
+        m_Manager.nationality = nation;
+      }
 
 
       std::string namecarteam = "Career Team: "+std::string(m_MainTeam.name);
@@ -189,9 +232,9 @@ void AnxSWOS::Draw()
       {
         ImGui::InputText("Team Name", m_MainTeam.name, 19, ImGuiInputTextFlags_CharsUppercase);
         int money = 0;
-        SWOSHook::ReadMemory(m_Base + ptrNewBalance, &money, 4);
+        SWOSHook::ReadMemory(m_DSeg + ptrNewBalance, &money, 4);
         ImGui::InputInt("Team Balance", &money, 0, 0);
-        SWOSHook::WriteMemory(m_Base + ptrNewBalance, &money, 4);
+        SWOSHook::WriteMemory(m_DSeg + ptrNewBalance, &money, 4);
         ImGui::Separator();
         if (ImGui::Button("Clear players injuries"))
           for (int i = 0; i < 26; i++)
@@ -217,95 +260,123 @@ void AnxSWOS::Draw()
           ImGui::TableSetupColumn("Form",  ImGuiTableColumnFlags_WidthStretch, wx * 0.05f);      
           ImGui::TableHeadersRow();
 
-          
-          for (int i = 0; i < 26; i++)
+          int pp = 0;
+          for (int i = 0; i < 32; i++)
           {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            const char* pos_str[] = {"GK", "RB", "LB", "D", "RW", "LW", "M", "A"};
-            char pn[64] = {0};
-            sprintf(pn, "###PName%02d", i);
-            ImGui::InputText(pn, m_MainTeam.players[i].name, 23, ImGuiInputTextFlags_CharsUppercase);
-            ImGui::TableNextColumn();
+            if (std::string(m_MainTeam.players[i].name).substr(0,5) != "*ERR*")
+            {
+              ImGui::TableNextRow();
+              ImGui::TableNextColumn();
+              const char* pos_str[] = {"GK", "RB", "LB", "D", "RW", "LW", "M", "A"};
+              char pn[64] = {0};
+              sprintf(pn, "###PName%02d", i);
+              ImGui::InputText(pn, m_MainTeam.players[i].name, 23, ImGuiInputTextFlags_CharsUppercase);
+              ImGui::TableNextColumn();
 
-            sprintf(pn, "###PPosit%02d", i);
-            int plposition = m_MainTeam.players[i].position.position;
-            ImGui::Combo(pn, &plposition, pos_str, 8); //ImGui::SameLine();
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].position.position = plposition;
+              sprintf(pn, "###PPosit%02d", i);
+              int plposition = m_MainTeam.players[i].position.position;
+              ImGui::Combo(pn, &plposition, pos_str, 8); //ImGui::SameLine();
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].position.position = plposition;
 
-            sprintf(pn, "###PPass%02d", i);
-            int att_p = m_MainTeam.players[i].attXP.second;
-            ImGui::InputInt(pn, &att_p, 0, 0); 
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].attXP.second = att_p;
+              sprintf(pn, "###PPass%02d", i);
+              int att_p = m_MainTeam.players[i].attXP.second;
+              ImGui::InputInt(pn, &att_p, 0, 0); 
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].attXP.second = att_p;
 
-            sprintf(pn, "###PShots%02d", i);
-            att_p = m_MainTeam.players[i].attVH.first;
-            ImGui::InputInt(pn, &att_p, 0, 0); 
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].attVH.first = att_p;
+              sprintf(pn, "###PShots%02d", i);
+              att_p = m_MainTeam.players[i].attVH.first;
+              ImGui::InputInt(pn, &att_p, 0, 0); 
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].attVH.first = att_p;
 
-            sprintf(pn, "###Phead%02d", i);
-            att_p = m_MainTeam.players[i].attVH.second;
-            ImGui::InputInt(pn, &att_p, 0, 0); 
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].attVH.second = att_p;
+              sprintf(pn, "###Phead%02d", i);
+              att_p = m_MainTeam.players[i].attVH.second;
+              ImGui::InputInt(pn, &att_p, 0, 0); 
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].attVH.second = att_p;
 
-            sprintf(pn, "###Ptack%02d", i);
-            att_p = m_MainTeam.players[i].attTC.first;
-            ImGui::InputInt(pn, &att_p, 0, 0); 
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].attTC.first = att_p;
+              sprintf(pn, "###Ptack%02d", i);
+              att_p = m_MainTeam.players[i].attTC.first;
+              ImGui::InputInt(pn, &att_p, 0, 0); 
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].attTC.first = att_p;
 
-            sprintf(pn, "###Pbctrl%02d", i);
-            att_p = m_MainTeam.players[i].attTC.second;
-            ImGui::InputInt(pn, &att_p, 0, 0); 
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].attTC.second = att_p;
-    
-            sprintf(pn, "###Pspeed%02d", i);
-            att_p = m_MainTeam.players[i].attSF.first;
-            ImGui::InputInt(pn, &att_p, 0, 0); 
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].attSF.first = att_p;
+              sprintf(pn, "###Pbctrl%02d", i);
+              att_p = m_MainTeam.players[i].attTC.second;
+              ImGui::InputInt(pn, &att_p, 0, 0); 
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].attTC.second = att_p;
+      
+              sprintf(pn, "###Pspeed%02d", i);
+              att_p = m_MainTeam.players[i].attSF.first;
+              ImGui::InputInt(pn, &att_p, 0, 0); 
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].attSF.first = att_p;
 
-            sprintf(pn, "###Pfini%02d", i);
-            att_p = m_MainTeam.players[i].attSF.second;
-            ImGui::InputInt(pn, &att_p, 0, 0); 
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].attSF.second = att_p;
+              sprintf(pn, "###Pfini%02d", i);
+              att_p = m_MainTeam.players[i].attSF.second;
+              ImGui::InputInt(pn, &att_p, 0, 0); 
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].attSF.second = att_p;
 
-            const char* swsval_str[] = {    
-              "25K-", "25K", "30K", "40K", "50K", "65K", "75K", "85K", "100K", "110K", "130K",
-              "150K", "160K", "180K", "200K", "250K", "300K", "350K", "450K", "500K", "550K",
-              "600K", "650K", "700K", "750K", "800K", "850K", "950K", "1M", "1.1M", "1.3M",
-              "1.5M", "1.6M", "1.8M", "1.9M", "2M", "2.25M", "2.75M", "3M", "3.5M", "4.5M",
-              "5M", "6M", "7M", "8M", "9M", "10M", "12M", "15M", "15M+"
-            };
+              const char* swsval_str[] = {    
+                "25K-", "25K", "30K", "40K", "50K", "65K", "75K", "85K", "100K", "110K", "130K",
+                "150K", "160K", "180K", "200K", "250K", "300K", "350K", "450K", "500K", "550K",
+                "600K", "650K", "700K", "750K", "800K", "850K", "950K", "1M", "1.1M", "1.3M",
+                "1.5M", "1.6M", "1.8M", "1.9M", "2M", "2.25M", "2.75M", "3M", "3.5M", "4.5M",
+                "5M", "6M", "7M", "8M", "9M", "10M", "12M", "15M", "15M+"
+              };
 
-            sprintf(pn, "###PValue%02d", i);
-            int plvalue = m_MainTeam.players[i].value;
-            ImGui::Combo(pn, &plvalue, swsval_str, 50); //ImGui::SameLine();
-            m_MainTeam.players[i].value = plvalue;
-            ImGui::TableNextColumn();
+              sprintf(pn, "###PValue%02d", i);
+              int plvalue = m_MainTeam.players[i].value;
+              ImGui::Combo(pn, &plvalue, swsval_str, 50); //ImGui::SameLine();
+              m_MainTeam.players[i].value = plvalue;
+              ImGui::TableNextColumn();
 
-            sprintf(pn, "###Pform%02d", i);
-            att_p = m_MainTeam.players[i].value_progress;
-            ImGui::InputInt(pn, &att_p, 0, 0); 
-            ImGui::TableNextColumn();
-            m_MainTeam.players[i].value_progress = att_p;
+              sprintf(pn, "###Pform%02d", i);
+              att_p = m_MainTeam.players[i].value_progress;
+              ImGui::InputInt(pn, &att_p, 0, 0); 
+              ImGui::TableNextColumn();
+              m_MainTeam.players[i].value_progress = att_p;
+              pp++;
+            }
+            if (pp == m_PlayersCount)
+              break;
           }
         ImGui::EndTable();
         }
       }
         
       
-      SWOSHook::WriteMemory(m_Base + ptrCareerTeam, &m_MainTeam, sizeof(ASWSTeamCar));
+      if (ImGui::CollapsingHeader("Job Offers", ImGuiTreeNodeFlags_DefaultOpen))
+      {
+        ImGui::Text("Number of Job Offers: %d", m_JobOffers.joboffers_count);
+        for (int i = 0; i < m_JobOffers.joboffers_count; i++)
+        {
+          char tnme[64] = {0};
+          sprintf(tnme, "TeamID##%d", i);
+          ImGui::InputScalar(tnme, ImGuiDataType_U8, &m_JobOffers.joboffer[i].teamID.nation, 0, 0, "%x"); ImGui::SameLine();
+          sprintf(tnme, "TeamNo##%d", i);
+          ImGui::InputScalar(tnme, ImGuiDataType_U8, &m_JobOffers.joboffer[i].teamID.number);
+          sprintf(tnme, "TeamName##%d", i);
+          ImGui::InputText(tnme, m_JobOffers.joboffer[i].teamname, 19, ImGuiInputTextFlags_CharsUppercase);
+          sprintf(tnme, "Budget##%d", i);
+          ImGui::InputScalar(tnme, ImGuiDataType_S32, &m_JobOffers.joboffer[i].budget);
+          ImGui::Separator();
+
+        }
+      }
+
+      SWOSHook::WriteMemory(m_DSeg + ptrCareerTeam, &m_MainTeam, sizeof(ASWSTeamCar));
+      SWOSHook::WriteMemory(m_DSeg + ptrCareerManager, &m_Manager, sizeof(ASWSCarManager));
+      SWOSHook::WriteMemory(ptrJobOffers + m_DSeg, &m_JobOffers, sizeof(ASWSJobOffers));
+      
     }
     if (ImGui::CollapsingHeader("About", ImGuiTreeNodeFlags_DefaultOpen))
     {
-      ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Anx-SWOS-CarRTE 0.1.1b");
+      ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Anx-SWOS-CarRTE 0.1.2b");
       ImGui::Text("Copyright (c)2024 AnoXic");
       ImGui::Separator();
       ImGui::Text("Enable/Disable: LCtrl + e");

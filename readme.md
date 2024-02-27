@@ -2,7 +2,7 @@
 ---
 Autor: AnoXic
 Plugin for SWOS to runtime editing team in career mode.
-Supported SWOS version: 6.2.3
+Supported SWOS version: 6.3.0
 
 ### Donations
 
@@ -10,27 +10,26 @@ Support the author of the project with a donation:
 
 [![paypal](https://www.paypalobjects.com/en_US/PL/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate?cmd=_s-xclick&hosted_button_id=P8MAW3UMJWGRC)
 
-### Instalation
+# Instalation
 
 copy compiled file winmm.dll and SDL2.dll (from bin folder) to main swos folder (where is swos-port-Release.exe),
 copy plugins folder to this same directory or create directory plugins and copy file swos_car_rte.asi
-
 
 > [!IMPORTANT]
 > Replace orginal SDL2.dll ( in this plugin used version 2.0.22 ), imgui sdlrenderer needs newer version.
 
 > [!IMPORTANT]
-> Select OpenGL mode, in sofware mode mouse support don't work
+> Disable News and Tips Ticker in SWOS Options Menu (mouse problems).
 
-### Using
+# Using
 
 Enable/Disable : LCTRL + e
 
-### Screenshot
-
-![1](https://github.com/anoxic83/SWOS_CarRTE/assets/24848605/f1eb6f8d-283d-4e2e-bfd4-4af64a32334c)
-
-
 # Changes Log
+**v0.1.2b**
+- Update to SWOS v6.3.0
+- Adding manager editing
+- Adding job offer editing
+
 **v0.1.1b**
 - initial vesion

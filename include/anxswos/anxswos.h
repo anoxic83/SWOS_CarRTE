@@ -94,12 +94,52 @@ struct ASWSTeamCar
   ASWSKit awaykit;
   char coachname[24];
   uint8_t playerpos[16];
-  ASWSPlayer players[26];
+  ASWSPlayer players[32];
 };
 
+struct ASWSTransfer
+{
+  ASWSTeamID teamfrom_id;
+  uint8_t playerpos;
+  uint8_t unknown;
+  ASWSPlayer player;
+};
 
+struct ASWSTeamCarName
+{
+  uint16_t players_no;
+  int16_t unk_0;
+  int16_t unk_1;
+  ASWSTeamID teamid;
+  char name[19];
+};
 
+struct ASWSCarManager
+{
+  ASWSTeamID current_team;
+  int16_t player_coach;
+  int16_t teamleague;
+  int16_t unknown[4];
+  int16_t mrs_ms;
+  char mrs_ms_str[5];
+  char firstname[9];
+  char surname[13];
+  int8_t nationality;
+};
 
+struct ASWSJobOffer
+{
+  ASWSTeamID teamID;
+  char teamname[18];
+  int32_t budget;
+  int16_t unknown;
+};
+
+struct ASWSJobOffers
+{
+  int16_t joboffers_count;
+  ASWSJobOffer joboffer[5];
+};
 
 #pragma pack(pop)
 
@@ -108,6 +148,7 @@ class AnxSWOS
 {
 private:
   uintptr_t m_Base;
+  uintptr_t m_DSeg;
   SDL_Window* m_Window;
   SDL_GLContext m_GLContext;
   SDL_Renderer* m_Renderer;
@@ -118,8 +159,12 @@ private:
   bool m_OpenGLRenderer;
   bool m_GUIEnabled;
   bool IsCareer();
+  //
   ASWSTeamCar m_MainTeam;
-
+  ASWSCarManager m_Manager;
+  uint8_t m_PlayersCount;
+  ASWSJobOffers m_JobOffers;
+  //
   bool m_HexMemory;
   MemoryEditor m_HexEdit;
   uintptr_t m_CurrentHexAddress;

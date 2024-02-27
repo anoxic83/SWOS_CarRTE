@@ -126,7 +126,7 @@
   bool SWOSHook::ReadMemory(uintptr_t address, void* value, size_t size)
   {
     MEMORY_BASIC_INFORMATION info;
-    if (VirtualQuery((LPVOID)address, &info, sizeof(info))!= 0)
+    if (VirtualQuery((LPVOID)address, &info, sizeof(MEMORY_BASIC_INFORMATION))!= 0)
     {
       memcpy(value, (void*)address, size);
       return true;
@@ -142,7 +142,7 @@
     DWORD dwOrginalProtect;
 		DWORD dwNewProtect = PAGE_EXECUTE_READWRITE;
     MEMORY_BASIC_INFORMATION info;
-    if (VirtualQuery((LPVOID)address, &info, sizeof(info))!= 0)
+    if (VirtualQuery((LPVOID)address, &info, sizeof(MEMORY_BASIC_INFORMATION))!= 0)
     {
 		  VirtualProtect((LPVOID)address, size, dwNewProtect, &dwOrginalProtect);
 		  memset((void*)address, value, size);
