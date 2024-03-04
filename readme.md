@@ -2,7 +2,7 @@
 ---
 Autor: AnoXic
 Plugin for SWOS to runtime editing team in career mode.
-Supported SWOS version: 6.3.0
+Supported SWOS version: 6.3.7
 
 ### Donations
 
@@ -31,6 +31,9 @@ Enable/Disable : LCTRL + e
 ![2](https://github.com/anoxic83/SWOS_CarRTE/assets/24848605/8d2e46d7-9eab-4e61-9ffa-347a1c0d3e99)
 
 ### Changes Log
+**v0.1.3b**
+- Update to SWOS v6.3.7
+
 **v0.1.2b**
 - Update to SWOS v6.3.0
 - Adding manager editing

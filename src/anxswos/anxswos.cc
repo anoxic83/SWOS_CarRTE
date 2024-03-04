@@ -2,14 +2,13 @@
 #define SWSLOG_IMPLEMENTATION
 #include "swslog.h"
 //Init vars
-//Init vars
-const uintptr_t ptrEnhancement = 0xA596D0 - 0x400000; // Is OpenGL or SDL
-const uintptr_t ptrSDLWindow = 0x4BF8298 - 0x400000;
-const uintptr_t ptrSDLRenderer = 0xA59878 - 0x400000;
-const uintptr_t ptrGLContext = 0xA59874 - 0x400000;
+const uintptr_t ptrEnhancement = 0xA596E0 - 0x400000; // Is OpenGL or SDL
+const uintptr_t ptrSDLWindow = 0x4BF82A8 - 0x400000;
+const uintptr_t ptrSDLRenderer = 0xA59888 - 0x400000;
+const uintptr_t ptrGLContext = 0xA59884 - 0x400000;
 
-const uintptr_t ptrWindowWidth = 0x4EF9C84 - 0x400000;
-const uintptr_t ptrWindowHeight = 0x4EF9C88 - 0x400000;
+const uintptr_t ptrWindowWidth = 0x4EF9C94 - 0x400000;
+const uintptr_t ptrWindowHeight = 0x4EF9C98 - 0x400000;
 
 // Helpers
 const uintptr_t ptrInputingText = 0x54FDA73 - 0x400000;
@@ -181,7 +180,7 @@ void AnxSWOS::Draw()
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(width * 0.2f, heigth * 0.2f), ImGuiCond_FirstUseEver);
     //const std::string imwinname = (m_GUIOverlay) ? "GUI Plugin [OvelayMode]" : "GUI Plugin [Override Mode]";
-    ImGui::Begin("Anx-SWOS-CarRTE 0.1.2b");
+    ImGui::Begin("Anx-SWOS-CarRTE 0.1.3b");
     if (IsCareer())
     {
       ImGui::Text("base_ptr: 0x%08x", m_Base);
@@ -376,7 +375,7 @@ void AnxSWOS::Draw()
     }
     if (ImGui::CollapsingHeader("About", ImGuiTreeNodeFlags_DefaultOpen))
     {
-      ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Anx-SWOS-CarRTE 0.1.2b");
+      ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "Anx-SWOS-CarRTE 0.1.3b");
       ImGui::Text("Copyright (c)2024 AnoXic");
       ImGui::Separator();
       ImGui::Text("Enable/Disable: LCtrl + e");
